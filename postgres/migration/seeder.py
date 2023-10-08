@@ -6,7 +6,7 @@ import random
 fake = Faker()
 
 # Number of rows to generate
-num_rows = 1000
+num_rows = 10000
 
 # Define the output file name
 output_file = '2_data.sql'

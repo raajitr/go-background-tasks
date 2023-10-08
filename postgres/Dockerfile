@@ -3,7 +3,7 @@ WORKDIR /app
 COPY ./postgres/migration/ .
 
 RUN pip install faker
-RUN python script.py
+RUN python seeder.py
 
 FROM postgres:alpine
 
