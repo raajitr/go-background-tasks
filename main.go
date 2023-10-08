@@ -23,10 +23,10 @@ func main() {
 
 func startHandler(b Background) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		if <-b.isRunning {
 			w.WriteHeader(429)
 			fmt.Fprintln(w, "It's already running")
+			b.isRunning <- true // keep it true since we enqued it already
 			return
 		}
 
@@ -38,7 +38,16 @@ func startHandler(b Background) http.HandlerFunc {
 }
 func statsHandler(b Background) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentRows := <-b.doneRow
+		var currentRows int
+
+		select {
+			case currentRows = <-b.doneRow:
+				fmt.Println(currentRows)
+			default:
+				fmt.Println("Probably zero")
+				currentRows = 0
+		}
+		
 
 		if currentRows == 0 {
 			w.WriteHeader(412)

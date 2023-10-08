@@ -22,7 +22,6 @@ func NewBackgroundTask(db *pgxpool.Pool) *Background {
 	}
 
 	ret.isRunning <- false
-	ret.doneRow <- 0
 
 	return ret
 }
@@ -81,9 +80,8 @@ func (b Background) Start() {
 	fmt.Println("Background job started...")
 	b.updateValues()
 
-	defer func() {
-		fmt.Println("Background job completed.")
-		b.isRunning <- false
-	}()
+	curr_status := <-b.isRunning
+	b.isRunning <- !curr_status
+	fmt.Println("Background job completed.")
 
 }
