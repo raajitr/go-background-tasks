@@ -9,7 +9,7 @@ func main() {
 	db_conn := DBClient()
 	backgroundTask := NewBackgroundTask(db_conn)
 	fmt.Println("BG INITIATED")
-	// Define handler functions for the "start" and "stats" endpoints
+
 	http.HandleFunc("/start", startHandler(*backgroundTask))
 	http.HandleFunc("/stats", statsHandler(*backgroundTask))
 
@@ -25,21 +25,29 @@ func startHandler(b Background) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if <-b.isRunning {
+			w.WriteHeader(429)
 			fmt.Fprintln(w, "It's already running")
 			return
 		}
-		// Handle the "start" endpoint
-		fmt.Fprintln(w, "Starting the job")
 
 		go b.Start()
+
+		w.WriteHeader(202)
+		fmt.Fprintln(w, "Starting the job")
 	}
 }
 func statsHandler(b Background) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Handle the "stats" endpoint
 		currentRows := <-b.doneRow
-		msg := fmt.Sprintf("Current Completed Rows: %d", currentRows)
 
+		if currentRows == 0 {
+			w.WriteHeader(412)
+			fmt.Fprintln(w, "No Background Process Started")
+			return
+		}
+		msg := fmt.Sprintf("Current Completed Rows: %d", currentRows)
+		
+		w.WriteHeader(200)
 		fmt.Fprintln(w, msg)
 	}
 }
