@@ -3,12 +3,16 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 )
 
+var isRunning = make(chan bool, 1)
+
 func main() {
+	isRunning <- false
+	backgroundTask := NewBackgroundTask(isRunning)
+	fmt.Println("BG INITIATED")
     // Define handler functions for the "start" and "stats" endpoints
-    http.HandleFunc("/start", startHandler)
+    http.HandleFunc("/start", startHandler(*backgroundTask))
     http.HandleFunc("/stats", statsHandler)
 
     // Start the HTTP server on port 8080
@@ -19,22 +23,20 @@ func main() {
     }
 }
 
-func startHandler(w http.ResponseWriter, r *http.Request) {
-    // Handle the "start" endpoint
-    fmt.Fprintln(w, "Welcome to the 'start' endpoint!")
+func startHandler(backgorundTask BackroundTask) http.HandlerFunc{
+	return func(w http.ResponseWriter, r *http.Request) {
 
-	go backgroundJob()
+		if <-isRunning {
+			fmt.Fprintln(w, "It's already running")
+			return
+		}
+		// Handle the "start" endpoint
+		fmt.Fprintln(w, "Starting the job")
+
+		go backgorundTask.Start()
+	}
 }
-
 func statsHandler(w http.ResponseWriter, r *http.Request) {
     // Handle the "stats" endpoint
     fmt.Fprintln(w, "This is the 'stats' endpoint!")
-}
-
-
-func backgroundJob() {
-    // Simulate a long-running background job
-    fmt.Println("Background job started...")
-    time.Sleep(5 * time.Second)
-    fmt.Println("Background job completed.")
 }
